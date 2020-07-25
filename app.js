@@ -53,21 +53,73 @@ function initialPrompts() {
 }
 
 function artistSearch() {
-  console.log("Searching artist...");
-  initialPrompts();
-}
-
-function multiSearch() {
-  console.log("Multisearching...");
-  initialPrompts();
+  inquirer
+    .prompt([
+      {
+        message: "Which artist are you looking for?",
+        name: "artist",
+      },
+    ])
+    .then((answer) => {
+      connection.query(
+        "SELECT position, artist, song, year FROM top5000 WHERE ?",
+        { artist: answer.artist },
+        (err, results) => {
+          if (err) throw err;
+          console.table(results);
+          initialPrompts();
+        }
+      );
+    });
 }
 
 function rangeSearch() {
-  console.log("Range searching...");
-  initialPrompts();
+  inquirer.prompt([
+      {
+        name: "beginning",
+        type: "number",
+        message: "Starting position?"
+      },
+      {
+        name: "end",
+        type: "number",
+        message: "Ending position?"
+      }
+    ]).then(answers => {
+      connection.query(
+        "SELECT position, artist, song, year FROM top5000 WHERE position BETWEEN ? AND ?",
+        [answers.beginning, answers.end],
+        (err, results) => {
+          if (err) throw err;
+          console.table(results);
+          initialPrompts();
+        }
+      );
+    })
+}
+
+function multiSearch() {
+  connection.query('SELECT artist, count(*) as countNum FROM top5000 GROUP BY artist HAVING countNum > 1 ORDER BY countNum DESC',
+    (err, result) => {
+        if (err) throw err;
+        console.table(result)
+        initialPrompts();
+    }
+  )
 }
 
 function songSearch() {
-  console.log("Song searching...");
-  initialPrompts();
+ inquirer.prompt([
+     {
+         message: 'Which song are you looking for?',
+         name: 'song'
+     }
+ ]).then(answer => {
+     connection.query(`SELECT position, artist, song, year FROM top5000 WHERE song LIKE "%${answer.song}%"`,
+    (err, results) => {
+        if (err) throw err;
+        console.table(results)
+        initialPrompts();
+    })
+ })
 }
